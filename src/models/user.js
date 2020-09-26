@@ -15,8 +15,8 @@ const userSchema = new mongoose.Schema({
     required: true,
     unique: true,
     lowercase: true,
-    validate(value) {
-      const checkForEmail = validator.isEmail(value);
+    validate(email) {
+      const checkForEmail = validator.isEmail(email);
       if (checkForEmail == false) {
         throw new Error('Emmail is invalid!');
       }
@@ -27,7 +27,6 @@ const userSchema = new mongoose.Schema({
     trim: true,
     required: true,
     minlength: 5,
-    maxlength: 20,
   },
 });
 
