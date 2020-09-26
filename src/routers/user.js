@@ -6,6 +6,12 @@ router.post('/users/signup', async (req, res) => {
   const user = new User(req.body);
   console.log(user);
   try {
+    const checkEmail = await User.findOne({ email: req.body.email });
+    if (checkEmail) {
+      return res.send({
+        errorMessage: 'Email already exists.',
+      });
+    }
     await user.save();
     res.status(201).send(user);
   } catch (e) {
