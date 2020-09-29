@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const validator = require('validator');
+const jwt = require('jsonwebtoken');
 
 //User Schema
 const userSchema = new mongoose.Schema({
@@ -18,7 +19,7 @@ const userSchema = new mongoose.Schema({
     validate(email) {
       const checkForEmail = validator.isEmail(email);
       if (checkForEmail == false) {
-        throw new Error('Emmail is invalid!');
+        throw new Error('Email is invalid!');
       }
     },
   },
@@ -28,7 +29,25 @@ const userSchema = new mongoose.Schema({
     required: true,
     minlength: 5,
   },
+  tokens: [
+    {
+      token: {
+        type: String,
+        required: true,
+      },
+    },
+  ],
 });
+
+//schema method to generate authentication token
+userSchema.methods.generateToken = async function () {
+  const token = await jwt.sign(
+    { _id: this._id.toString() },
+    process.env.PRIVATE_KEY
+  );
+  this.tokens.push({ token });
+  this.save();
+};
 
 //User model
 const User = mongoose.model('User', userSchema);

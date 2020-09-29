@@ -2,10 +2,10 @@ const express = require('express');
 const User = require('../models/user');
 const router = new express.Router();
 const bcrypt = require('bcryptjs');
+const authoriseIt = require('../authentication/auth');
 
 router.post('/users/signup', async (req, res) => {
   const user = new User(req.body);
-  console.log(user);
   try {
     //check email if it already exists
     const checkEmail = await User.findOne({ email: req.body.email });
@@ -17,9 +17,19 @@ router.post('/users/signup', async (req, res) => {
     //to hash the password
     const hashedPassword = await bcrypt.hash(req.body.password, 8);
     user.password = hashedPassword;
+
     //save user
     await user.save();
-    res.status(201).send(user);
+
+    //to generate the authentication token
+    await user.generateToken();
+    console.log(user);
+    //hide private data
+    const publicProfile = user.toObject();
+    delete publicProfile.password;
+    delete publicProfile.tokens;
+
+    res.status(201).send(publicProfile);
   } catch (e) {
     res.send(e);
   }
@@ -44,12 +54,28 @@ router.post('/users/login', async (req, res) => {
           errorMessage: 'Password is incorrect!',
         });
       } else {
-        res.send(findUserByEmail);
+        //generate authentication token
+        await findUserByEmail.generateToken();
+
+        //hide private data
+        const publicProfile = findUserByEmail.toObject();
+        delete publicProfile.password;
+        delete publicProfile.tokens;
+
+        res.send(publicProfile);
       }
     }
   } catch (e) {
     res.status(400).send(e);
   }
+});
+router.get('/users/self', authoriseIt, (req, res) => {
+  //hide private data
+  const publicProfile = req.user.toObject();
+  delete publicProfile.password;
+  delete publicProfile.tokens;
+  //send response
+  res.send(publicProfile);
 });
 
 module.exports = router;
