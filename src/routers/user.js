@@ -3,6 +3,7 @@ const User = require('../models/user');
 const router = new express.Router();
 const bcrypt = require('bcryptjs');
 const authoriseIt = require('../authentication/auth');
+const sendEmailForSignup = require('../email/email');
 
 router.post('/users/signup', async (req, res) => {
   const user = new User(req.body);
@@ -20,9 +21,10 @@ router.post('/users/signup', async (req, res) => {
 
     //save user
     await user.save();
-
     //to generate the authentication token
     await user.generateToken();
+    //send email
+    sendEmailForSignup(user.email, user.name);
     console.log(user);
     //hide private data
     const publicProfile = user.toObject();
