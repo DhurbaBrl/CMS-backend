@@ -21,15 +21,16 @@ router.post('/users/signup', async (req, res) => {
 
     //save user
     await user.save();
+
     //to generate the authentication token
     await user.generateToken();
+
     //send email
     sendEmailForSignup(user.email, user.name);
-    console.log(user);
+
     //hide private data
     const publicProfile = user.toObject();
     delete publicProfile.password;
-    delete publicProfile.tokens;
 
     res.status(201).send(publicProfile);
   } catch (e) {
@@ -62,7 +63,7 @@ router.post('/users/login', async (req, res) => {
         //hide private data
         const publicProfile = findUserByEmail.toObject();
         delete publicProfile.password;
-        delete publicProfile.tokens;
+        // delete publicProfile.tokens;
 
         res.send(publicProfile);
       }

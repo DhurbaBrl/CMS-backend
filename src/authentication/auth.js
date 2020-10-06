@@ -19,6 +19,5 @@ const authoriseIt = async (req, res, next) => {
   } catch (e) {
     res.status(401).send({ errorMessage: 'Authentication failed!' });
   }
-  next();
 };
 module.exports = authoriseIt;

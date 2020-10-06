@@ -49,6 +49,13 @@ userSchema.methods.generateToken = async function () {
   this.save();
 };
 
+//to create virtual field 'contents' to relate user with contents' author
+userSchema.virtual('contents', {
+  ref: 'Content',
+  localField: '_id',
+  foreignField: 'author',
+});
+
 //User model
 const User = mongoose.model('User', userSchema);
 
