@@ -23,8 +23,14 @@ router.post('/content', authoriseIt, async (req, res) => {
 router.get('/content', authoriseIt, async (req, res) => {
   try {
     const user = req.user;
-    //populate contents property from user to get contents from user
+    //populate contents property from user to get array of contents from user
     await user.populate('contents').execPopulate();
+    console.log(user.contents);
+    if (user.contents.length === 0) {
+      return res.send({
+        errorMessage: 'You have not created any posts yet!',
+      });
+    }
     res.send(user.contents);
   } catch (e) {
     res.send(e);

@@ -1,9 +1,11 @@
 const express = require('express');
 const User = require('../models/user');
+const Content = require('../models/content');
 const router = new express.Router();
 const bcrypt = require('bcryptjs');
 const authoriseIt = require('../authentication/auth');
-const sendEmailForSignup = require('../email/email');
+const { sendEmailForSignup, sendEmailForDeletion } = require('../email/email');
+const { findByIdAndDelete } = require('../models/user');
 
 router.post('/users/signup', async (req, res) => {
   const user = new User(req.body);
@@ -79,6 +81,42 @@ router.get('/users/self', authoriseIt, (req, res) => {
   delete publicProfile.tokens;
   //send response
   res.send(publicProfile);
+});
+
+//to update user details
+router.patch('/users/self', authoriseIt, async (req, res) => {
+  try {
+    const user = req.user;
+    //hash the password before updating to the database
+    const hashedPassword = await bcrypt.hash(req.body.password, 8);
+
+    //update the user details as a whole
+    const updatedUser = await User.findByIdAndUpdate(user._id, {
+      name: req.body.name,
+      email: req.body.email,
+      password: hashedPassword,
+    });
+
+    res.send(updatedUser);
+  } catch (e) {
+    res.send(e);
+  }
+});
+
+//to delete the user
+router.delete('/users/self', authoriseIt, async (req, res) => {
+  try {
+    const user = req.user;
+    //delete user
+    const deleteUser = await User.findByIdAndDelete(user._id);
+    //delete user's content
+    await Content.deleteMany({ author: user._id });
+    //send email for deletion
+    sendEmailForDeletion(deleteUser.email, deleteUser.name);
+    res.send(deleteUser);
+  } catch (e) {
+    res.send(e);
+  }
 });
 
 module.exports = router;
