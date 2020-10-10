@@ -3,9 +3,12 @@ const User = require('../models/user');
 const Content = require('../models/content');
 const router = new express.Router();
 const bcrypt = require('bcryptjs');
+const sharp = require('sharp');
 const authoriseIt = require('../authentication/auth');
 const { sendEmailForSignup, sendEmailForDeletion } = require('../email/email');
 const { findByIdAndDelete } = require('../models/user');
+const multer = require('multer');
+const { response } = require('express');
 
 router.post('/users/signup', async (req, res) => {
   const user = new User(req.body);
@@ -65,6 +68,7 @@ router.post('/users/login', async (req, res) => {
         //hide private data
         const publicProfile = findUserByEmail.toObject();
         delete publicProfile.password;
+        delete publicProfile.image;
         // delete publicProfile.tokens;
 
         res.send(publicProfile);
@@ -74,13 +78,22 @@ router.post('/users/login', async (req, res) => {
     res.send(e);
   }
 });
-router.get('/users/self', authoriseIt, (req, res) => {
-  //hide private data
-  const publicProfile = req.user.toObject();
-  delete publicProfile.password;
-  delete publicProfile.tokens;
-  //send response
-  res.send(publicProfile);
+
+//to get user by id
+router.get('/users/:id', async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+    const publicProfile = user.toObject();
+    //hide private data
+    delete publicProfile.password;
+    delete publicProfile.tokens;
+    delete publicProfile.image;
+
+    //send response
+    res.send(publicProfile);
+  } catch (e) {
+    res.send(e);
+  }
 });
 
 //to update user details
@@ -96,8 +109,13 @@ router.patch('/users/self', authoriseIt, async (req, res) => {
       email: req.body.email,
       password: hashedPassword,
     });
+    //hide private data
+    const publicProfile = updatedUser.toObject();
+    delete publicProfile.password;
+    delete publicProfile.tokens;
+    delete publicProfile.image;
 
-    res.send(updatedUser);
+    res.send(publicProfile);
   } catch (e) {
     res.send(e);
   }
@@ -119,4 +137,116 @@ router.delete('/users/self', authoriseIt, async (req, res) => {
   }
 });
 
+//to upload the profile image
+var upload = multer({
+  limits: {
+    fileSize: 5000000,
+  },
+  fileFilter: (req, file, cb) => {
+    if (file.originalname.match(/\.(jpg|png|jpeg)$/).length === null) {
+      return cb(new Error('Please upload an image document.'));
+    }
+    cb(null, true);
+  },
+});
+router.post(
+  '/users/self/image',
+  authoriseIt,
+  upload.single('image'),
+  async (req, res) => {
+    try {
+      const user = req.user;
+      if (!req.file) {
+        throw new Error(); //executes the catch block
+      }
+      const imageBuffer = await sharp(req.file.buffer)
+        .resize({ width: 250, height: 250 })
+        .png()
+        .toBuffer();
+      user.image = imageBuffer;
+      await user.save();
+      res.send();
+    } catch (e) {
+      res.send(e);
+    }
+  },
+  (error, req, res, next) => {
+    res.status(400).send({ error: error.message });
+  }
+);
+
+//to view image
+router.get('/users/:id/image', async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user || !user.image) {
+      return res.send({
+        errorMessage: 'There is no user or image.',
+      });
+    }
+    res.set('Content-Type','image/png')
+    //console.log(user.image.buffer);
+    res.send(user.image);
+    // res.send();
+  } catch (e) {
+    res.send(e);
+  }
+});
+
+//to update the image
+router.patch(
+  '/users/self/image',
+  authoriseIt,
+  upload.single('image'),
+  async (req, res) => {
+    try {
+      const user = req.user;
+      const imageBuffer = await sharp(req.file.buffer)
+      .resize({ width: 250, height: 250 })
+      .png()
+      .toBuffer();
+
+      await User.findByIdAndUpdate(user._id, { image: imageBuffer });
+      res.send();
+    } catch (e) {
+      res.send(e);
+    }
+  }
+);
+
+//to delete image
+router.delete('/users/self/image', authoriseIt, async (req, res) => {
+  try {
+    const user = req.user;
+    if (!user.image) {
+      return res.send({
+        errorMessage: 'There is no image to delete.',
+      });
+    }
+    user.image = undefined;
+    await user.save();
+    res.send();
+  } catch (e) {
+    res.send(e);
+  }
+});
+
+//to logout user
+router.post('/users/logout',authoriseIt,async(req,res)=>{
+  try{
+  const user=req.user
+  const token=req.token
+  const findObjectOfToken=user.tokens.find((tokenObject)=>{
+      return tokenObject.token==token
+    })
+  const index=user.tokens.indexOf(findObjectOfToken)
+  if(index>-1){
+    user.tokens.splice(index,1)
+  }
+  await user.save()
+  res.send()
+  }catch(e){
+    res.send(e)
+  }
+})
 module.exports = router;

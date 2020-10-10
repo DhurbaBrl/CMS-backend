@@ -3,6 +3,7 @@ const router = new express.Router();
 const authoriseIt = require('../authentication/auth');
 const { findById } = require('../models/content');
 const Content = require('../models/content');
+const User = require('../models/user');
 
 router.post('/content', authoriseIt, async (req, res) => {
   //creating new instance of content with author field
@@ -19,16 +20,21 @@ router.post('/content', authoriseIt, async (req, res) => {
   }
 });
 
-//to get all contents of authenticated user
-router.get('/content', authoriseIt, async (req, res) => {
+//to get all contents of user by id of user
+router.get('/content/user/:id', async (req, res) => {
   try {
-    const user = req.user;
+    const user = await User.findById(req.params.id);
+    if(!user){
+      return res.send({
+        errorMessage:'There is no user with this id.'
+      })
+    }
     //populate contents property from user to get array of contents from user
     await user.populate('contents').execPopulate();
-    console.log(user.contents);
+    //console.log(user.contents);
     if (user.contents.length === 0) {
       return res.send({
-        errorMessage: 'You have not created any posts yet!',
+        errorMessage: 'User has not created any posts!',
       });
     }
     res.send(user.contents);
@@ -38,14 +44,14 @@ router.get('/content', authoriseIt, async (req, res) => {
 });
 
 //to get one content by id
-router.get('/content/:id', authoriseIt, async (req, res) => {
+router.get('/content/:id', async (req, res) => {
   try {
     //console.log(req.params.id);
     const content = await Content.findById(req.params.id);
-    // console.log(content);
+    //console.log(content);
     if (!content) {
       return res.send({
-        errorMessage: 'COntent not found.',
+        errorMessage: 'Content not found.',
       });
     }
     res.send(content);
@@ -57,7 +63,10 @@ router.get('/content/:id', authoriseIt, async (req, res) => {
 //to update the content by id
 router.patch('/content/:id', authoriseIt, async (req, res) => {
   try {
-    const content = await Content.findByIdAndUpdate(req.params.id, req.body);
+    const content = await Content.findOneAndUpdate({
+      _id: req.params.id,
+      author: req.user._id,
+    }, req.body);
     if (!content) {
       return res.send({
         errorMessage: 'Content not found.',
@@ -72,7 +81,7 @@ router.patch('/content/:id', authoriseIt, async (req, res) => {
 //to delete content
 router.delete('/content/:id', authoriseIt, async (req, res) => {
   try {
-    const deleteContent = await Content.findByIdAndDelete({
+    const deleteContent = await Content.findOneAndDelete({
       _id: req.params.id,
       author: req.user._id,
     });

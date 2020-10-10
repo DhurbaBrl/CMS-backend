@@ -37,6 +37,9 @@ const userSchema = new mongoose.Schema({
       },
     },
   ],
+  image: {
+    type: Buffer,
+  },
 });
 
 //schema method to generate authentication token

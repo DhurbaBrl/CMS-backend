@@ -15,6 +15,7 @@ const authoriseIt = async (req, res, next) => {
       });
     }
     req.user = user;
+    req.token=token;
     next();
   } catch (e) {
     res.status(401).send({ errorMessage: 'Authentication failed!' });
