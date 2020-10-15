@@ -28,25 +28,28 @@ router.post('/users/signup', async (req, res) => {
     await user.save();
 
     //to generate the authentication token
-    await user.generateToken();
-
+    const token=await user.generateToken();
     //send email
     sendEmailForSignup(user.email, user.name);
 
     //hide private data
     const publicProfile = user.toObject();
     delete publicProfile.password;
+    delete publicProfile.tokens;
 
-    res.status(201).send(publicProfile);
+    res.status(201).send({publicProfile,token});
   } catch (e) {
     res.send(e);
   }
 });
 
 router.post('/users/login', async (req, res) => {
+  //console.log(req.body)
   try {
     //find the  user by email
+    console.log(req.body.email)
     const findUserByEmail = await User.findOne({ email: req.body.email });
+    //console.log(findUserByEmail)
     if (!findUserByEmail) {
       res.send({
         errorMessage: 'Email is not registered',
@@ -63,15 +66,15 @@ router.post('/users/login', async (req, res) => {
         });
       } else {
         //generate authentication token
-        await findUserByEmail.generateToken();
+       const token = await findUserByEmail.generateToken();
 
         //hide private data
         const publicProfile = findUserByEmail.toObject();
         delete publicProfile.password;
         delete publicProfile.image;
-        // delete publicProfile.tokens;
+        delete publicProfile.tokens;
 
-        res.send(publicProfile);
+        res.send({publicProfile,token});
       }
     }
   } catch (e) {

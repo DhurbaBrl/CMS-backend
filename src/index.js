@@ -13,6 +13,6 @@ app.use(express.json());
 app.use(userRouter);
 app.use(contentRouter);
 
-app.listen(3000, () => {
-  console.log('The port is started in port 3000.');
+app.listen(4000, () => {
+  console.log('The port is started in port 4000.');
 });

@@ -50,6 +50,7 @@ userSchema.methods.generateToken = async function () {
   );
   this.tokens.push({ token });
   this.save();
+  return token
 };
 
 //to create virtual field 'contents' to relate user with contents' author
