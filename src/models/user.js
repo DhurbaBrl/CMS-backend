@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 const validator = require('validator');
 const jwt = require('jsonwebtoken');
-
+const bcrypt=require('bcryptjs')
 //User Schema
 const userSchema = new mongoose.Schema({
   name: {
@@ -40,6 +40,14 @@ const userSchema = new mongoose.Schema({
   image: {
     type: Buffer,
   },
+});
+//to hash password
+userSchema.pre('save', async function(next) {
+  if (this.isModified('password')) {
+    //if the password is modified(created or updated), the plain text password is overwritten by the hashed
+    this.password = await bcrypt.hash(this.password, 8)
+ }
+  next();
 });
 
 //schema method to generate authentication token

@@ -21,8 +21,8 @@ router.post('/users/signup', async (req, res) => {
       });
     }
     //to hash the password
-    const hashedPassword = await bcrypt.hash(req.body.password, 8);
-    user.password = hashedPassword;
+    // const hashedPassword = await bcrypt.hash(req.body.password, 8);
+    // user.password = hashedPassword;
 
     //save user
     await user.save();
@@ -47,7 +47,6 @@ router.post('/users/login', async (req, res) => {
   //console.log(req.body)
   try {
     //find the  user by email
-    console.log(req.body.email)
     const findUserByEmail = await User.findOne({ email: req.body.email });
     //console.log(findUserByEmail)
     if (!findUserByEmail) {
@@ -101,24 +100,32 @@ router.get('/users/:id', async (req, res) => {
 
 //to update user details
 router.patch('/users/self', authoriseIt, async (req, res) => {
+  const user = req.user;
+  const keysToUpdate=Object.keys(req.body)
   try {
-    const user = req.user;
     //hash the password before updating to the database
-    const hashedPassword = await bcrypt.hash(req.body.password, 8);
+    //const hashedPassword = await bcrypt.hash(req.body.password, 8);
 
     //update the user details as a whole
-    const updatedUser = await User.findByIdAndUpdate(user._id, {
-      name: req.body.name,
-      email: req.body.email,
-      password: hashedPassword,
-    });
-    //hide private data
-    const publicProfile = updatedUser.toObject();
-    delete publicProfile.password;
-    delete publicProfile.tokens;
-    delete publicProfile.image;
+    // const updatedUser = await User.findByIdAndUpdate(user._id, {
+    //   name: req.body.name,
+    //   email: req.body.email,
+    //   password: hashedPassword,
+    // });
+    
+    keysToUpdate.forEach((update)=>{
+      user[update]=req.body[update]
+    })
 
-    res.send(publicProfile);
+    await user.save()
+
+    //hide private data
+    // const publicProfile = user.toObject();
+    // delete publicProfile.password;
+    // delete publicProfile.tokens;
+    // delete publicProfile.image;
+
+    res.send(user);
   } catch (e) {
     res.send(e);
   }
