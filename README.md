@@ -1,6 +1,6 @@
-# CMS-backend
+# CMS-Backend
 
-# Backend API for Content Management System (CMS) using Node.js.
+**Backend API for Content Management System (CMS) using Node.js.**
 
 **To Run Code**
 Clone the code and then run:
