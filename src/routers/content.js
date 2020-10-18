@@ -25,18 +25,18 @@ router.get('/content/user/:id', async (req, res) => {
   try {
     const user = await User.findById(req.params.id);
     if(!user){
-      return res.send({
+      return res.send([{
         errorMessage:'There is no user.'
-      })
+      }])
     }
     //populate contents property from user to get array of contents from user
     await user.populate('contents').execPopulate();
     //console.log(user.contents);
     user.contents.reverse()
     if (user.contents.length === 0) {
-      return res.send({
+      return res.send([{
         errorMessage: 'User has not created any posts!',
-      });
+      }]);
     }
     
     res.send(user.contents);

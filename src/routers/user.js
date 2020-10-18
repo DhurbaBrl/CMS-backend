@@ -99,7 +99,7 @@ router.get('/users/:id', async (req, res) => {
 });
 
 //to update user details
-router.patch('/users/self', authoriseIt, async (req, res) => {
+router.patch('/users/self', authoriseIt,async (req, res) => {
   const user = req.user;
   const keysToUpdate=Object.keys(req.body)
   try {
@@ -120,12 +120,12 @@ router.patch('/users/self', authoriseIt, async (req, res) => {
     await user.save()
 
     //hide private data
-    // const publicProfile = user.toObject();
-    // delete publicProfile.password;
-    // delete publicProfile.tokens;
-    // delete publicProfile.image;
+    const publicProfile = user.toObject();
+    delete publicProfile.password;
+    delete publicProfile.tokens;
+    delete publicProfile.image;
 
-    res.send(user);
+    res.send(publicProfile);
   } catch (e) {
     res.send(e);
   }
@@ -146,6 +146,7 @@ router.delete('/users/self', authoriseIt, async (req, res) => {
     res.send(e);
   }
 });
+
 
 //to upload the profile image
 var upload = multer({
